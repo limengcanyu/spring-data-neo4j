@@ -223,8 +223,7 @@ public class PropertyIT {
 	@Getter @Setter
 	static class RelationshipPropertyContainer extends BaseClass {
 
-		@Id @GeneratedValue
-		private Long id;
+		private @Id @GeneratedValue Long id;
 
 		@TargetNode
 		private IrrelevantTargetContainer irrelevantTargetContainer;

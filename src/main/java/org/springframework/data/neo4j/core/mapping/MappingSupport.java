@@ -55,8 +55,6 @@ public final class MappingSupport {
 			} else {
 				unifiedValue = ((Map<String, Object>) rawValue).entrySet();
 			}
-		} else if (property.isRelationshipWithProperties()) {
-			unifiedValue = (Collection<Object>) rawValue;
 		} else if (property.isCollectionLike()) {
 			unifiedValue = (Collection<Object>) rawValue;
 		} else {

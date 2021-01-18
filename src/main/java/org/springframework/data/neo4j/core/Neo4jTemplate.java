@@ -17,7 +17,6 @@ package org.springframework.data.neo4j.core;
 
 import static org.neo4j.cypherdsl.core.Cypher.asterisk;
 import static org.neo4j.cypherdsl.core.Cypher.parameter;
-import static org.springframework.data.neo4j.core.mapping.Constants.NAME_OF_KNOWN_RELATIONSHIPS_PARAM;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,6 +69,7 @@ import org.springframework.util.CollectionUtils;
 /**
  * @author Michael J. Simons
  * @author Philipp Tölle
+ * @author Gerrit Meier
  * @soundtrack Motörhead - We Are Motörhead
  * @since 6.0
  */
@@ -481,9 +481,12 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 			if (!isParentObjectNew) {
 
 				List<Long> knownRelationshipsIds = new ArrayList<>();
-				if(idProperty != null) {
+				if (idProperty != null) {
 					for (Object relatedValueToStore : relatedValuesToStore) {
-						knownRelationshipsIds.add((Long) relationshipContext.getRelationshipPropertiesPropertyAccessor(relatedValueToStore).getProperty(idProperty));
+						Long id = (Long) relationshipContext.getRelationshipPropertiesPropertyAccessor(relatedValueToStore).getProperty(idProperty);
+						if (id != null) {
+							knownRelationshipsIds.add(id);
+						}
 					}
 				}
 

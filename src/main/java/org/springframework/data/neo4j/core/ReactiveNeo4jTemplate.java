@@ -40,7 +40,6 @@ import org.neo4j.cypherdsl.core.Functions;
 import org.neo4j.cypherdsl.core.Statement;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.driver.exceptions.NoSuchRecordException;
-import org.neo4j.driver.summary.ResultSummary;
 import org.neo4j.driver.summary.SummaryCounters;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -479,9 +478,14 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 				if (!isParentObjectNew) {
 
 					List<Long> knownRelationshipsIds = new ArrayList<>();
-					if(idProperty != null) {
+					if (idProperty != null) {
 						for (Object relatedValueToStore : relatedValuesToStore) {
-							knownRelationshipsIds.add((Long) relationshipContext.getRelationshipPropertiesPropertyAccessor(relatedValueToStore).getProperty(idProperty));
+							Long id = (Long) relationshipContext
+									.getRelationshipPropertiesPropertyAccessor(relatedValueToStore)
+									.getProperty(idProperty);
+							if (id != null) {
+								knownRelationshipsIds.add(id);
+							}
 						}
 					}
 

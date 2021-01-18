@@ -52,7 +52,7 @@ class CypherGeneratorTest {
 				relationshipDescription, "REL", 1L);
 
 		String expectedQuery = "MATCH (startNode:`Entity1`) WHERE startNode.id = $fromId MATCH (endNode)"
-							   + " WHERE id(endNode) = 1 MERGE (startNode)<-[:`REL`]-(endNode)";
+							   + " WHERE id(endNode) = 1 MERGE (startNode)<-[relProps:`REL`]-(endNode) RETURN id(relProps)";
 		Assert.assertEquals(expectedQuery, Renderer.getDefaultRenderer().render(statement));
 	}
 
@@ -68,7 +68,7 @@ class CypherGeneratorTest {
 
 		String expectedQuery =
 				"MATCH (startNode:`Entity1`:`MultipleLabel`) WHERE startNode.id = $fromId MATCH (endNode)"
-				+ " WHERE id(endNode) = 1 MERGE (startNode)<-[:`REL`]-(endNode)";
+				+ " WHERE id(endNode) = 1 MERGE (startNode)<-[relProps:`REL`]-(endNode) RETURN id(relProps)";
 		Assert.assertEquals(expectedQuery, Renderer.getDefaultRenderer().render(statement));
 	}
 
@@ -86,7 +86,7 @@ class CypherGeneratorTest {
 				relationshipDescription, "REL", 1L);
 
 		String expectedQuery = "MATCH (startNode) WHERE id(startNode) = $fromId MATCH (endNode)"
-							   + " WHERE id(endNode) = 1 MERGE (startNode)<-[:`REL`]-(endNode)";
+							   + " WHERE id(endNode) = 1 MERGE (startNode)<-[relProps:`REL`]-(endNode) RETURN id(relProps)";
 		Assert.assertEquals(expectedQuery, Renderer.getDefaultRenderer().render(statement));
 	}
 
@@ -99,7 +99,7 @@ class CypherGeneratorTest {
 
 		Statement statement = CypherGenerator.INSTANCE.prepareDeleteOf(persistentEntity, relationshipDescription);
 
-		String expectedQuery = "MATCH (startNode:`Entity1`)<-[rel]-(:`Entity2`) WHERE startNode.id = $fromId DELETE rel";
+		String expectedQuery = "MATCH (startNode:`Entity1`)<-[rel]-(:`Entity2`) WHERE (startNode.id = $fromId AND NOT (id(rel) IN $__knownRelationShipIds__)) DELETE rel";
 		Assert.assertEquals(expectedQuery, Renderer.getDefaultRenderer().render(statement));
 	}
 
@@ -114,7 +114,7 @@ class CypherGeneratorTest {
 
 		Statement statement = CypherGenerator.INSTANCE.prepareDeleteOf(persistentEntity, relationshipDescription);
 
-		String expectedQuery = "MATCH (startNode:`Entity1`:`MultipleLabel`)<-[rel]-(:`Entity2`:`MultipleLabel`) WHERE startNode.id = $fromId DELETE rel";
+		String expectedQuery = "MATCH (startNode:`Entity1`:`MultipleLabel`)<-[rel]-(:`Entity2`:`MultipleLabel`) WHERE (startNode.id = $fromId AND NOT (id(rel) IN $__knownRelationShipIds__)) DELETE rel";
 		Assert.assertEquals(expectedQuery, Renderer.getDefaultRenderer().render(statement));
 	}
 
@@ -134,7 +134,7 @@ class CypherGeneratorTest {
 
 		Statement statement = CypherGenerator.INSTANCE.prepareDeleteOf(persistentEntity, relationshipDescription);
 
-		String expectedQuery = "MATCH (startNode)<-[rel]-(:`Entity2`) WHERE id(startNode) = $fromId DELETE rel";
+		String expectedQuery = "MATCH (startNode)<-[rel]-(:`Entity2`) WHERE (id(startNode) = $fromId AND NOT (id(rel) IN $__knownRelationShipIds__)) DELETE rel";
 		Assert.assertEquals(expectedQuery, Renderer.getDefaultRenderer().render(statement));
 	}
 

@@ -17,6 +17,7 @@ package org.springframework.data.neo4j.core;
 
 import static org.neo4j.cypherdsl.core.Cypher.asterisk;
 import static org.neo4j.cypherdsl.core.Cypher.parameter;
+import static org.springframework.data.neo4j.core.mapping.Constants.NAME_OF_KNOWN_RELATIONSHIPS_PARAM;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -237,7 +238,7 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 		Optional<Long> optionalInternalId = neo4jClient
 				.query(() -> renderer.render(cypherGenerator.prepareSaveOf(entityMetaData, dynamicLabels)))
 				.in(inDatabase)
-				.bind((T) entityToBeSaved)
+				.bind(entityToBeSaved)
 				.with(neo4jMappingContext.getRequiredBinderFunctionFor((Class<T>) entityToBeSaved.getClass()))
 				.fetchAs(Long.class).one();
 
@@ -461,6 +462,14 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 			RelationshipDescription relationshipDescription = relationshipContext.getRelationship();
 			RelationshipDescription relationshipDescriptionObverse = relationshipDescription.getRelationshipObverse();
 
+			Neo4jPersistentProperty idProperty;
+			if (!relationshipDescription.hasInternalIdProperty()) {
+				idProperty = null;
+			} else {
+				Neo4jPersistentEntity<?> relationshipPropertiesEntity = (Neo4jPersistentEntity<?>) relationshipDescription.getRelationshipPropertiesEntity();
+				idProperty = relationshipPropertiesEntity.getIdProperty();
+			}
+
 			// break recursive procession and deletion of previously created relationships
 			ProcessState processState = stateMachine.getStateOf(relationshipDescriptionObverse, relatedValuesToStore);
 			if (processState == ProcessState.PROCESSED_ALL_RELATIONSHIPS) {
@@ -470,12 +479,22 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 			// remove all relationships before creating all new if the entity is not new
 			// this avoids the usage of cache but might have significant impact on overall performance
 			if (!isParentObjectNew) {
-				Statement relationshipRemoveQuery = cypherGenerator.prepareDeleteOf(neo4jPersistentEntity,
-						relationshipDescription);
+
+				List<Long> knownRelationshipsIds = new ArrayList<>();
+				if(idProperty != null) {
+					for (Object relatedValueToStore : relatedValuesToStore) {
+						knownRelationshipsIds.add((Long) relationshipContext.getRelationshipPropertiesPropertyAccessor(relatedValueToStore).getProperty(idProperty));
+					}
+				}
+
+				Statement relationshipRemoveQuery = cypherGenerator.prepareDeleteOf(neo4jPersistentEntity, relationshipDescription);
 
 				neo4jClient.query(renderer.render(relationshipRemoveQuery)).in(inDatabase)
-						.bind(convertIdValues(neo4jPersistentEntity.getIdProperty(), fromId))
-						.to(Constants.FROM_ID_PARAMETER_NAME).run();
+						.bind(convertIdValues(neo4jPersistentEntity.getIdProperty(), fromId)) //
+							.to(Constants.FROM_ID_PARAMETER_NAME) //
+						.bind(knownRelationshipsIds) //
+							.to(Constants.NAME_OF_KNOWN_RELATIONSHIPS_PARAM) //
+						.run();
 			}
 
 			// nothing to do because there is nothing to map
@@ -502,10 +521,16 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 				CreateRelationshipStatementHolder statementHolder = neo4jMappingContext.createStatement(
 						neo4jPersistentEntity, relationshipContext, relatedInternalId, relatedValueToStore);
 
-				neo4jClient.query(renderer.render(statementHolder.getStatement())).in(inDatabase)
+				Optional<Long> relationshipInternalId = neo4jClient.query(renderer.render(statementHolder.getStatement())).in(inDatabase)
 						.bind(convertIdValues(targetNodeDescription.getRequiredIdProperty(), fromId))
 						.to(Constants.FROM_ID_PARAMETER_NAME).bindAll(statementHolder.getProperties())
-						.run();
+						.fetchAs(Long.class).one();
+
+				if (idProperty != null) {
+					relationshipContext
+							.getRelationshipPropertiesPropertyAccessor(relatedValueToStore)
+							.setProperty(idProperty, relationshipInternalId.get());
+				}
 
 				// if an internal id is used this must get set to link this entity in the next iteration
 				if (targetNodeDescription.isUsingInternalIds()) {

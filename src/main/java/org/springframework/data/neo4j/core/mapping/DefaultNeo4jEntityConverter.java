@@ -35,6 +35,7 @@ import java.util.stream.StreamSupport;
 
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
+import org.neo4j.driver.types.Entity;
 import org.neo4j.driver.types.MapAccessor;
 import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Path;
@@ -567,7 +568,7 @@ final class DefaultNeo4jEntityConverter implements Neo4jEntityConverter {
 
 	private static Value extractValueOf(Neo4jPersistentProperty property, MapAccessor propertyContainer) {
 		if (property.isInternalIdProperty()) {
-			return propertyContainer instanceof Node ? Values.value(((Node) propertyContainer).id())
+			return propertyContainer instanceof Entity ? Values.value(((Entity) propertyContainer).id())
 					: propertyContainer.get(Constants.NAME_OF_INTERNAL_ID);
 		} else if (property.isComposite()) {
 			String prefix = property.computePrefixWithDelimiter();

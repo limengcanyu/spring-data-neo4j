@@ -66,7 +66,7 @@ final class DomainClasses {
 	@Getter @Setter
 	static class RelationshipPropertyContainer extends BaseClass {
 
-		private @Id @GeneratedValue Long id;
+		//private @Id @GeneratedValue Long id;
 
 		@TargetNode
 		private IrrelevantTargetContainer irrelevantTargetContainer;

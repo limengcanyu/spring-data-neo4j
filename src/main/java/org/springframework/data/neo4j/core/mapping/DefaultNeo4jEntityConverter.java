@@ -42,6 +42,7 @@ import org.neo4j.driver.types.Path;
 import org.neo4j.driver.types.Relationship;
 import org.neo4j.driver.types.Type;
 import org.neo4j.driver.types.TypeSystem;
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.core.CollectionFactory;
 import org.springframework.data.mapping.AssociationHandler;
 import org.springframework.data.mapping.MappingException;
@@ -52,6 +53,7 @@ import org.springframework.data.mapping.model.EntityInstantiators;
 import org.springframework.data.mapping.model.ParameterValueProvider;
 import org.springframework.data.neo4j.core.convert.Neo4jConversionService;
 import org.springframework.data.neo4j.core.schema.TargetNode;
+import org.springframework.data.util.ProxyUtils;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
@@ -174,7 +176,7 @@ final class DefaultNeo4jEntityConverter implements Neo4jEntityConverter {
 		Map<String, Object> properties = new HashMap<>();
 
 		Neo4jPersistentEntity<?> nodeDescription = (Neo4jPersistentEntity<?>) nodeDescriptionStore
-				.getNodeDescription(source.getClass());
+				.getNodeDescription(ProxyUtils.getUserClass(source.getClass()));
 
 		PersistentPropertyAccessor propertyAccessor = nodeDescription.getPropertyAccessor(source);
 		nodeDescription.doWithProperties((Neo4jPersistentProperty p) -> {
@@ -344,7 +346,18 @@ final class DefaultNeo4jEntityConverter implements Neo4jEntityConverter {
 			}
 		};
 
-		return entityInstantiators.getInstantiatorFor(nodeDescription).createInstance(nodeDescription, parameterValueProvider);
+		ET instance = entityInstantiators.getInstantiatorFor(nodeDescription).createInstance(nodeDescription, parameterValueProvider);
+		if (nodeDescription.needsIdHolderProxy()) {
+			ProxyFactory pf = new ProxyFactory(instance);
+			pf.setProxyTargetClass(true);
+			pf.addInterface(IdHolder.class);
+			pf.addAdvice(new IdHolderImpl());
+			IdHolder idHolder = (IdHolder) pf.getProxy();
+			idHolder.setId((Long) conversionService.readValue(extractValueOf(nodeDescription.getIdProperty(), values), nodeDescription.getIdProperty().getTypeInformation(), null));
+			System.out.println(idHolder.getId());
+			return (ET) idHolder;
+		}
+		return instance;
 	}
 
 	private PropertyHandler<Neo4jPersistentProperty> populateFrom(MapAccessor queryResult,

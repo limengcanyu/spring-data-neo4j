@@ -462,13 +462,8 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 			RelationshipDescription relationshipDescription = relationshipContext.getRelationship();
 			RelationshipDescription relationshipDescriptionObverse = relationshipDescription.getRelationshipObverse();
 
-			Neo4jPersistentProperty idProperty;
-			if (!relationshipDescription.hasInternalIdProperty()) {
-				idProperty = null;
-			} else {
 				Neo4jPersistentEntity<?> relationshipPropertiesEntity = (Neo4jPersistentEntity<?>) relationshipDescription.getRelationshipPropertiesEntity();
-				idProperty = relationshipPropertiesEntity.getIdProperty();
-			}
+			Neo4jPersistentProperty	idProperty = relationshipPropertiesEntity.getIdProperty();
 
 			// break recursive procession and deletion of previously created relationships
 			ProcessState processState = stateMachine.getStateOf(relationshipDescriptionObverse, relatedValuesToStore);
@@ -484,6 +479,7 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 				if (idProperty != null) {
 					for (Object relatedValueToStore : relatedValuesToStore) {
 						Long id = (Long) relationshipContext.getRelationshipPropertiesPropertyAccessor(relatedValueToStore).getProperty(idProperty);
+						System.out.println("rread " + id );
 						if (id != null) {
 							knownRelationshipsIds.add(id);
 						}
@@ -533,6 +529,7 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 					relationshipContext
 							.getRelationshipPropertiesPropertyAccessor(relatedValueToStore)
 							.setProperty(idProperty, relationshipInternalId.get());
+					System.out.println("set it " + relationshipInternalId.get());
 				}
 
 				// if an internal id is used this must get set to link this entity in the next iteration

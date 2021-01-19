@@ -43,4 +43,6 @@ public interface Neo4jPersistentEntity<T>
 	Optional<Neo4jPersistentProperty> getDynamicLabelsProperty();
 
 	boolean isRelationshipPropertiesEntity();
+
+	boolean needsIdHolderProxy();
 }

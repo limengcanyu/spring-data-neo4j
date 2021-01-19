@@ -15,6 +15,7 @@
  */
 package org.springframework.data.neo4j.core.mapping;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,8 +35,11 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mapping.Association;
+import org.springframework.data.mapping.PersistentProperty;
+import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.model.BasicPersistentEntity;
+import org.springframework.data.mapping.model.PersistentPropertyAccessorFactory;
 import org.springframework.data.neo4j.core.schema.DynamicLabels;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.IdGenerator;
@@ -93,6 +97,8 @@ final class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo
 	private final Lazy<Boolean> isRelationshipPropertiesEntity;
 
 	private final Lazy<Boolean> containsPossibleCircles;
+
+	private IdHolderIdProperty idHolderIdProperty;
 
 	DefaultNeo4jPersistentEntity(TypeInformation<T> information) {
 		super(information);
@@ -215,8 +221,12 @@ final class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo
 
 	private void verifyIdDescription() {
 
-		if (this.getIdDescription() == null && isExplicitEntity) {
+		IdDescription optionalIdDescription = this.getIdDescription();
+		if (optionalIdDescription == null && isExplicitEntity) {
 			throw new IllegalStateException("Missing id property on " + this.getUnderlyingClass() + ".");
+		}
+		if (optionalIdDescription == null && this.isRelationshipPropertiesEntity() && !Modifier.isFinal(this.getUnderlyingClass().getModifiers())) {
+			this.idHolderIdProperty = new IdHolderIdProperty(this);
 		}
 	}
 
@@ -506,5 +516,61 @@ final class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public Neo4jPersistentProperty getIdProperty() {
+		if(idHolderIdProperty != null) {
+			return idHolderIdProperty;
+		}
+		return super.getIdProperty();
+	}
+
+	@Override public void setPersistentPropertyAccessorFactory(PersistentPropertyAccessorFactory factory) {
+
+		if(!needsIdHolderProxy())
+		super.setPersistentPropertyAccessorFactory(factory);
+
+
+	}
+
+	@Override
+	public <B> PersistentPropertyAccessor<B> getPropertyAccessor(B bean) {
+		PersistentPropertyAccessor<B> delegate = super.getPropertyAccessor(bean);
+		if(needsIdHolderProxy()) {
+			return new PersistentPropertyAccessor<B>() {
+
+				@Override
+				public void setProperty(PersistentProperty<?> property, Object value) {
+					if("id".equals(property.getName())) {
+						((IdHolder)delegate.getBean()).setId((Long) value);
+					} else {
+						System.out.println("setting to " + value);
+						delegate.setProperty(property, value);
+						System.out.println("what?");
+					}
+				}
+
+				@Override
+				public Object getProperty(PersistentProperty<?> property) {
+					if("id".equals(property.getName())) {
+						return ((IdHolder)delegate.getBean()).getId();
+					}
+					System.out.println("sehr seltsam");
+					return delegate.getProperty(property);
+				}
+
+				@Override
+				public B getBean() {
+					return delegate.getBean();
+				}
+			};
+		}
+		return delegate;
+	}
+
+	@Override
+	public boolean needsIdHolderProxy() {
+		return idHolderIdProperty != null;
 	}
 }

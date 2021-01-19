@@ -61,7 +61,6 @@ import org.springframework.data.neo4j.core.schema.Property;
 import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.data.neo4j.core.schema.RelationshipProperties;
 import org.springframework.data.neo4j.core.schema.TargetNode;
-import org.springframework.data.neo4j.integration.shared.common.Friend;
 import org.springframework.data.neo4j.integration.shared.common.FriendshipRelationship;
 import org.springframework.data.neo4j.test.LogbackCapture;
 import org.springframework.data.neo4j.test.LogbackCapturingExtension;
@@ -74,7 +73,7 @@ class Neo4jMappingContextTest {
 	@ExtendWith(LogbackCapturingExtension.class)
 	@Nested
 	class InvalidRelationshipProperties {
-		@Test
+		@Test // GH-2118
 		void aWarningShouldBeLogged(LogbackCapture logbackCapture) {
 
 			Neo4jMappingContext schema = new Neo4jMappingContext();
@@ -84,7 +83,7 @@ class Neo4jMappingContextTest {
 					.contains("The target class `org.springframework.data.neo4j.core.mapping.Neo4jMappingContextTest$InvalidRelationshipPropertyContainer` for the properties of the relationship `RELATIONSHIP_PROPERTY_CONTAINER` is missing a property for the generated, internal ID (`@Id @GeneratedValue Long id`). It is needed for safely updating properties and will be required from SDN 6.1 upwards.");
 		}
 
-		@Test
+		@Test // GH-2118
 		void noWarningShouldBeLogged(LogbackCapture logbackCapture) {
 
 			Neo4jMappingContext schema = new Neo4jMappingContext();

@@ -350,12 +350,12 @@ final class DefaultNeo4jEntityConverter implements Neo4jEntityConverter {
 		if (nodeDescription.needsIdHolderProxy()) {
 			ProxyFactory pf = new ProxyFactory(instance);
 			pf.setProxyTargetClass(true);
-			pf.addInterface(IdHolder.class);
-			pf.addAdvice(new IdHolderImpl());
-			IdHolder idHolder = (IdHolder) pf.getProxy();
-			idHolder.setId((Long) conversionService.readValue(extractValueOf(nodeDescription.getIdProperty(), values), nodeDescription.getIdProperty().getTypeInformation(), null));
-			System.out.println(idHolder.getId());
-			return (ET) idHolder;
+			pf.addInterface(IdMixin.class);
+			pf.addAdvice(new IdMixinAdvice());
+			IdMixin idMixin = (IdMixin) pf.getProxy();
+			idMixin.setId((Long) conversionService.readValue(extractValueOf(nodeDescription.getIdProperty(), values), nodeDescription.getIdProperty().getTypeInformation(), null));
+			System.out.println(idMixin.getId());
+			return (ET) idMixin;
 		}
 		return instance;
 	}

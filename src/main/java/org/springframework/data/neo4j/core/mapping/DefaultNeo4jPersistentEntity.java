@@ -32,14 +32,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.logging.LogFactory;
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mapping.Association;
-import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.model.BasicPersistentEntity;
-import org.springframework.data.mapping.model.PersistentPropertyAccessorFactory;
 import org.springframework.data.neo4j.core.schema.DynamicLabels;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.IdGenerator;
@@ -98,7 +97,7 @@ final class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo
 
 	private final Lazy<Boolean> containsPossibleCircles;
 
-	private IdHolderIdProperty idHolderIdProperty;
+	private Neo4jPersistentProperty idHolderIdProperty;
 
 	DefaultNeo4jPersistentEntity(TypeInformation<T> information) {
 		super(information);
@@ -134,7 +133,7 @@ final class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo
 		}
 		// It could be "me"
 		NodeDescription<?> mostAbstractParent = this;
-		for (; /* Michael and me smiling at each other */ ;) {
+		for (; /* Michael and me smiling at each other */ ; ) {
 			NodeDescription<?> parent = mostAbstractParent.getParentNodeDescription();
 			if (parent == null) {
 				return mostAbstractParent;
@@ -256,13 +255,14 @@ final class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo
 				Relationship relationship = inverse.findAnnotation(Relationship.class);
 				Assert.state(relationship == null || relationship.type().isEmpty(),
 						() -> "Dynamic relationships cannot be used with a fixed type. Omit @Relationship or use @Relationship(direction = "
-								+ relationship.direction().name() + ") without a type in " + this.getUnderlyingClass() + " on field "
-								+ inverse.getFieldName() + ".");
+							  + relationship.direction().name() + ") without a type in " + this.getUnderlyingClass()
+							  + " on field "
+							  + inverse.getFieldName() + ".");
 
 				Assert.state(!targetEntities.contains(inverse.getAssociationTargetType()),
 						() -> this.getUnderlyingClass() + " already contains a dynamic relationship to "
-								+ inverse.getAssociationTargetType()
-								+ ". Only one dynamic relationship between to entities is permitted.");
+							  + inverse.getAssociationTargetType()
+							  + ". Only one dynamic relationship between to entities is permitted.");
 				targetEntities.add(inverse.getAssociationTargetType());
 			}
 		});
@@ -276,7 +276,8 @@ final class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo
 				RelationshipDescription relationship = (RelationshipDescription) association;
 				if (relationship.hasRelationshipProperties()) {
 					NodeDescription<?> relationshipPropertiesEntity = relationship.getRelationshipPropertiesEntity();
-					if (relationshipPropertiesEntity.getIdDescription() == null || !relationshipPropertiesEntity.getIdDescription().isInternallyGeneratedId()) {
+					if (relationshipPropertiesEntity.getIdDescription() == null || !relationshipPropertiesEntity
+							.getIdDescription().isInternallyGeneratedId()) {
 						Supplier<CharSequence> messageSupplier = () -> String.format(
 								"The target class `%s` for the properties of the relationship `%s` "
 								+ "is missing a property for the generated, internal ID (`@Id @GeneratedValue Long id`). "
@@ -301,13 +302,16 @@ final class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo
 			String propertyName = persistentProperty.getPropertyName();
 			namesOfPropertiesWithDynamicLabels.add(propertyName);
 
-			Assert.state(persistentProperty.isCollectionLike(), () -> String.format("Property %s on %s must extends %s.",
-					persistentProperty.getFieldName(), persistentProperty.getOwner().getType(), Collection.class.getName()));
+			Assert.state(persistentProperty.isCollectionLike(),
+					() -> String.format("Property %s on %s must extends %s.",
+							persistentProperty.getFieldName(), persistentProperty.getOwner().getType(),
+							Collection.class.getName()));
 		});
 
 		Assert.state(namesOfPropertiesWithDynamicLabels.size() <= 1,
-				() -> String.format("Multiple properties in entity %s are annotated with @%s: %s.", getUnderlyingClass(),
-						DynamicLabels.class.getSimpleName(), namesOfPropertiesWithDynamicLabels));
+				() -> String
+						.format("Multiple properties in entity %s are annotated with @%s: %s.", getUnderlyingClass(),
+								DynamicLabels.class.getSimpleName(), namesOfPropertiesWithDynamicLabels));
 	}
 
 	/**
@@ -401,14 +405,15 @@ final class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo
 		String idGeneratorRef = generatedValueAnnotation.generatorRef();
 
 		if (idProperty.getActualType() == UUID.class && idGeneratorClass == GeneratedValue.InternalIdGenerator.class
-				&& !StringUtils.hasText(idGeneratorRef)) {
+			&& !StringUtils.hasText(idGeneratorRef)) {
 			idGeneratorClass = GeneratedValue.UUIDGenerator.class;
 		}
 
 		// Internally generated ids.
 		if (idGeneratorClass == GeneratedValue.InternalIdGenerator.class && idGeneratorRef.isEmpty()) {
 			if (idProperty.findAnnotation(Property.class) != null) {
-				throw new IllegalArgumentException("Cannot use internal id strategy with custom property " + propertyName
+				throw new IllegalArgumentException(
+						"Cannot use internal id strategy with custom property " + propertyName
 						+ " on entity class " + this.getUnderlyingClass().getName());
 			}
 
@@ -429,7 +434,8 @@ final class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo
 
 		final List<RelationshipDescription> relationships = new ArrayList<>();
 		this.doWithAssociations(
-				(Association<Neo4jPersistentProperty> association) -> relationships.add((RelationshipDescription) association));
+				(Association<Neo4jPersistentProperty> association) -> relationships
+						.add((RelationshipDescription) association));
 		return Collections.unmodifiableCollection(relationships);
 	}
 
@@ -503,7 +509,8 @@ final class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo
 		return false;
 	}
 
-	private boolean calculatePossibleCircles(NodeDescription<?> nodeDescription, Set<RelationshipDescription> processedRelationships) {
+	private boolean calculatePossibleCircles(NodeDescription<?> nodeDescription,
+			Set<RelationshipDescription> processedRelationships) {
 		Collection<RelationshipDescription> relationships = nodeDescription.getRelationships();
 
 		for (RelationshipDescription relationship : relationships) {
@@ -520,53 +527,23 @@ final class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo
 
 	@Override
 	public Neo4jPersistentProperty getIdProperty() {
-		if(idHolderIdProperty != null) {
+
+		if (idHolderIdProperty != null) {
+
 			return idHolderIdProperty;
 		}
+
 		return super.getIdProperty();
-	}
-
-	@Override public void setPersistentPropertyAccessorFactory(PersistentPropertyAccessorFactory factory) {
-
-		if(!needsIdHolderProxy())
-		super.setPersistentPropertyAccessorFactory(factory);
-
-
 	}
 
 	@Override
 	public <B> PersistentPropertyAccessor<B> getPropertyAccessor(B bean) {
-		PersistentPropertyAccessor<B> delegate = super.getPropertyAccessor(bean);
-		if(needsIdHolderProxy()) {
-			return new PersistentPropertyAccessor<B>() {
 
-				@Override
-				public void setProperty(PersistentProperty<?> property, Object value) {
-					if("id".equals(property.getName())) {
-						((IdHolder)delegate.getBean()).setId((Long) value);
-					} else {
-						System.out.println("setting to " + value);
-						delegate.setProperty(property, value);
-						System.out.println("what?");
-					}
-				}
-
-				@Override
-				public Object getProperty(PersistentProperty<?> property) {
-					if("id".equals(property.getName())) {
-						return ((IdHolder)delegate.getBean()).getId();
-					}
-					System.out.println("sehr seltsam");
-					return delegate.getProperty(property);
-				}
-
-				@Override
-				public B getBean() {
-					return delegate.getBean();
-				}
-			};
+		if (needsIdHolderProxy()) {
+			return new IdHolderAwarePersistentPropertyAccessor(super::getPropertyAccessor, bean);
 		}
-		return delegate;
+
+		return super.getPropertyAccessor(bean);
 	}
 
 	@Override

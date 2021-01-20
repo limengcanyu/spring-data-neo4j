@@ -101,12 +101,10 @@ public final class NestedRelationshipContext {
 
 	public @Nullable PersistentPropertyAccessor<?> getRelationshipPropertiesPropertyAccessor(Object relatedValue) {
 
-		if (!this.hasRelationshipWithProperties()) {
+		if (!this.hasRelationshipWithProperties() || relatedValue == null) {
 			return null;
 		}
 
-		// See algorithm in identifyAndExtractRelationshipTargetNode(Object relatedValue) {
-		Object valueToBeSaved;
 		if (relatedValue instanceof Map.Entry) {
 			Object mapValue = ((Map.Entry<?, ?>) relatedValue).getValue();
 			mapValue = mapValue instanceof List ? ((List<?>) mapValue).get(0) : mapValue;

@@ -159,31 +159,28 @@ class PropertyIT {
 		Long id;
 		try (Session session = driver.session()) {
 			id = session
-					.run("CREATE (a:IrrelevantSourceContainer) - [:RELATIONSHIP_PROPERTY_CONTAINER {knownProperty: 'A', unknownProperty: 'Mr. X'}] -> (:IrrelevantTargetContainer) RETURN id(a)")
+					.run("CREATE (a:IrrelevantSourceContainer) - [:RELATIONSHIP_PROPERTY_CONTAINER {knownProperty: 'A', unknownProperty: 'Mr. X'}] -> (b:IrrelevantTargetContainer), (a) - [:RELATIONSHIP_PROPERTY_CONTAINER_NO_ID {knownProperty: 'B', unknownProperty: 'Mr. X'}] -> (b) "
+						 + "RETURN id(a)")
 					.single().get(0).asLong();
-
-			Long id2 = session
-					.run("MATCH (a:IrrelevantSourceContainer) - [r:RELATIONSHIP_PROPERTY_CONTAINER {knownProperty: 'A', unknownProperty: 'Mr. X'}] -> (:IrrelevantTargetContainer) WHERE id(a) = $id RETURN id(r)", Collections.singletonMap("id", id))
-					.single().get(0).asLong();
-			System.out.println(">>>> " + id2);
 		}
 
 		Optional<DomainClasses.IrrelevantSourceContainer> optionalContainer = template
 				.findById(id, DomainClasses.IrrelevantSourceContainer.class);
 		assertThat(optionalContainer).hasValueSatisfying(c -> {
 			assertThat(c.getRelationshipPropertyContainer()).isNotNull();
-		//	assertThat(c.getRelationshipPropertyContainer().getId()).isNotNull();
+			assertThat(c.getRelationshipPropertyContainer().getId()).isNotNull();
+			assertThat(c.getRelationshipPropertyContainerNoId()).isNotNull();
 		});
 
 		optionalContainer.ifPresent(c -> {
 			c.getRelationshipPropertyContainer().setKnownProperty("A2");
-			System.out.println(c.getRelationshipPropertyContainer().getKnownProperty());
+			c.getRelationshipPropertyContainerNoId().setKnownProperty("B2");
 			template.save(c);
 		});
 
 		try (Session session = driver.session()) {
 			long cnt = session
-					.run("MATCH (m) - [r:RELATIONSHIP_PROPERTY_CONTAINER] -> (:IrrelevantTargetContainer) WHERE id(m) = $id AND r.knownProperty = 'A2' AND r.unknownProperty = 'Mr. X' RETURN count(m)",
+					.run("MATCH (m) - [r:RELATIONSHIP_PROPERTY_CONTAINER] -> (:IrrelevantTargetContainer), (m) - [r2:RELATIONSHIP_PROPERTY_CONTAINER_NO_ID] -> (:IrrelevantTargetContainer) WHERE id(m) = $id AND r.knownProperty = 'A2' AND r2.knownProperty = 'B2' AND r.unknownProperty = 'Mr. X' and r2.unknownProperty = r.unknownProperty RETURN count(m)",
 							Collections.singletonMap("id", id)).single().get(0).asLong();
 			assertThat(cnt).isEqualTo(1L);
 		}
@@ -195,12 +192,17 @@ class PropertyIT {
 		DomainClasses.RelationshipPropertyContainer rel = new DomainClasses.RelationshipPropertyContainer();
 		rel.setKnownProperty("A");
 		rel.setIrrelevantTargetContainer(new DomainClasses.IrrelevantTargetContainer());
-		DomainClasses.IrrelevantSourceContainer s = template.save(new DomainClasses.IrrelevantSourceContainer(rel));
 
-		//assertThat(s.getRelationshipPropertyContainer().getId()).isNotNull();
+		DomainClasses.RelationshipPropertyContainerNoId relB = new DomainClasses.RelationshipPropertyContainerNoId();
+		relB.setKnownProperty("B");
+		relB.setIrrelevantTargetContainer(new DomainClasses.IrrelevantTargetContainer());
+
+		DomainClasses.IrrelevantSourceContainer s = template.save(new DomainClasses.IrrelevantSourceContainer(rel, relB));
+
+		assertThat(s.getRelationshipPropertyContainer().getId()).isNotNull();
 		try (Session session = driver.session()) {
 			long cnt = session
-					.run("MATCH (m) - [r:RELATIONSHIP_PROPERTY_CONTAINER] -> (:IrrelevantTargetContainer) WHERE id(m) = $id AND r.knownProperty = 'A' RETURN count(m)",
+					.run("MATCH (m) - [r:RELATIONSHIP_PROPERTY_CONTAINER] -> (:IrrelevantTargetContainer), (m) - [r2:RELATIONSHIP_PROPERTY_CONTAINER_NO_ID] -> (:IrrelevantTargetContainer) WHERE id(m) = $id AND r.knownProperty = 'A' AND r2.knownProperty = 'B' RETURN count(m)",
 							Collections.singletonMap("id", s.getId())).single().get(0).asLong();
 			assertThat(cnt).isEqualTo(1L);
 		}

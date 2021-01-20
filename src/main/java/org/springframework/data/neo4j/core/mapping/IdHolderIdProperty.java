@@ -11,7 +11,6 @@ import java.util.function.Function;
 import org.neo4j.driver.Value;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.PersistentEntity;
-import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
@@ -23,8 +22,8 @@ final class IdHolderIdProperty implements Neo4jPersistentProperty {
 	static {
 		try {
 			p = Property.of(
-					ClassTypeInformation.from(IdHolder .class),
-					new PropertyDescriptor("id",IdHolder .class, "getId","setId"));
+					ClassTypeInformation.from(IdMixin.class),
+					new PropertyDescriptor("id", IdMixin.class, "getId","setId"));
 		} catch (IntrospectionException e) {
 			throw new RuntimeException(e);
 		}

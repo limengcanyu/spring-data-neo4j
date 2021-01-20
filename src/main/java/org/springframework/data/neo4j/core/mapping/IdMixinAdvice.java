@@ -3,7 +3,7 @@ package org.springframework.data.neo4j.core.mapping;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
-public final class IdHolderImpl implements MethodInterceptor {
+public final class IdMixinAdvice implements MethodInterceptor {
 
 	private Long id;
 
@@ -16,8 +16,6 @@ public final class IdHolderImpl implements MethodInterceptor {
 			case "getId":
 				return this.id;
 			default: {
-				invocation.
-				System.out.println("peng " + invocation.getMethod().getName());
 				return invocation.proceed();
 			}
 		}

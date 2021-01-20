@@ -478,8 +478,10 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 				List<Long> knownRelationshipsIds = new ArrayList<>();
 				if (idProperty != null) {
 					for (Object relatedValueToStore : relatedValuesToStore) {
+						if(relatedValueToStore == null) {
+							continue;
+						}
 						Long id = (Long) relationshipContext.getRelationshipPropertiesPropertyAccessor(relatedValueToStore).getProperty(idProperty);
-						System.out.println("rread " + id );
 						if (id != null) {
 							knownRelationshipsIds.add(id);
 						}

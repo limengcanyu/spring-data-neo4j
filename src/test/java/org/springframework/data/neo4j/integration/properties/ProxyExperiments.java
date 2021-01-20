@@ -1,30 +1,18 @@
 package org.springframework.data.neo4j.integration.properties;
 
 import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.Objects;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.data.mapping.Association;
-import org.springframework.data.mapping.PersistentEntity;
-import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
-import org.springframework.data.mapping.model.SimpleTypeHolder;
-import org.springframework.data.neo4j.core.mapping.IdHolder;
-import org.springframework.data.neo4j.core.mapping.IdHolderImpl;
+import org.springframework.data.neo4j.core.mapping.IdMixin;
+import org.springframework.data.neo4j.core.mapping.IdMixinAdvice;
 import org.springframework.data.neo4j.core.mapping.Neo4jMappingContext;
 import org.springframework.data.neo4j.core.mapping.Neo4jPersistentEntity;
 import org.springframework.data.neo4j.core.mapping.Neo4jPersistentProperty;
 import org.springframework.data.neo4j.core.schema.RelationshipProperties;
-import org.springframework.data.neo4j.integration.shared.common.KotlinClub;
-import org.springframework.data.util.ClassTypeInformation;
-import org.springframework.data.util.TypeInformation;
 
 public class ProxyExperiments {
 
@@ -58,8 +46,8 @@ public class ProxyExperiments {
 	//	withPropSupport.setS("asd");
 
 		ProxyFactory pf = new ProxyFactory(withPropSupport);
-		pf.addInterface(IdHolder.class);
-		pf.addAdvice(new IdHolderImpl());
+		pf.addInterface(IdMixin.class);
+		pf.addAdvice(new IdMixinAdvice());
 		pf.setProxyTargetClass(true);
 		pf.setOptimize(true);
 

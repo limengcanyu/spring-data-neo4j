@@ -196,8 +196,12 @@ class ReactivePropertyIT {
 		rel.setKnownProperty("A");
 		rel.setIrrelevantTargetContainer(new DomainClasses.IrrelevantTargetContainer());
 
+		DomainClasses.RelationshipPropertyContainerNoId relB = new DomainClasses.RelationshipPropertyContainerNoId();
+		relB.setKnownProperty("B");
+		relB.setIrrelevantTargetContainer(new DomainClasses.IrrelevantTargetContainer());
+
 		List<DomainClasses.IrrelevantSourceContainer> recorded = new ArrayList<>();
-		template.save(new DomainClasses.IrrelevantSourceContainer(rel))
+		template.save(new DomainClasses.IrrelevantSourceContainer(rel, relB))
 				.as(StepVerifier::create)
 				.recordWith(() -> recorded)
 				//.expectNextMatches(i -> i.getRelationshipPropertyContainer().getId() != null)

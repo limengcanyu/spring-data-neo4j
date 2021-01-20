@@ -293,4 +293,10 @@ final class DefaultNeo4jPersistentProperty extends AnnotationBasedPersistentProp
 		}
 		return sb.toString();
 	}
+
+	@Override
+	public boolean usePropertyAccess() {
+
+		return ((Neo4jPersistentEntity<?>)getOwner()).needsIdHolderProxy()  || super.usePropertyAccess();
+	}
 }

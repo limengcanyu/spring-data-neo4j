@@ -50,9 +50,14 @@ final class DomainClasses {
 		@Relationship(type = "RELATIONSHIP_PROPERTY_CONTAINER")
 		RelationshipPropertyContainer relationshipPropertyContainer;
 
-		IrrelevantSourceContainer(
-				RelationshipPropertyContainer relationshipPropertyContainer) {
+		@Relationship(type = "RELATIONSHIP_PROPERTY_CONTAINER_NO_ID")
+		RelationshipPropertyContainerNoId relationshipPropertyContainerNoId;
+
+		public IrrelevantSourceContainer(
+				RelationshipPropertyContainer relationshipPropertyContainer,
+				RelationshipPropertyContainerNoId relationshipPropertyContainerNoId) {
 			this.relationshipPropertyContainer = relationshipPropertyContainer;
+			this.relationshipPropertyContainerNoId = relationshipPropertyContainerNoId;
 		}
 	}
 
@@ -66,7 +71,15 @@ final class DomainClasses {
 	@Getter @Setter
 	static class RelationshipPropertyContainer extends BaseClass {
 
-		//private @Id @GeneratedValue Long id;
+		private @Id @GeneratedValue Long id;
+
+		@TargetNode
+		private IrrelevantTargetContainer irrelevantTargetContainer;
+	}
+
+	@RelationshipProperties
+	@Getter @Setter
+	static class RelationshipPropertyContainerNoId extends BaseClass {
 
 		@TargetNode
 		private IrrelevantTargetContainer irrelevantTargetContainer;

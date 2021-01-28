@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -147,6 +148,12 @@ class AdvancedMappingIT {
 		assertThat(movie).isNotNull();
 		assertThat(movie.getTitle()).isEqualTo("The Matrix");
 		assertThat(movie.getActors()).hasSize(5);
+	}
+
+	@Test
+	void killThemAll2(@Autowired MovieRepository repository) {
+		List<Movie> movies = repository.findAllById(Arrays.asList("The Matrix", "The Matrix Revolutions", "The Matrix Reloaded"));
+		assertThat(movies).hasSize(3);
 	}
 
 	@Test // GH-2117

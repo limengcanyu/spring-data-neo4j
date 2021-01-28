@@ -58,7 +58,7 @@ class AdvancedMappingIT {
 
 	protected static long theMatrixId;
 
-	@BeforeAll
+//	@BeforeAll
 	static void setupData(@Autowired Driver driver) throws IOException {
 
 		try (BufferedReader moviesReader = new BufferedReader(
@@ -139,6 +139,14 @@ class AdvancedMappingIT {
 
 		@Query("MATCH p=(movie:Movie)<-[r:ACTED_IN]-(n:Person) WHERE movie.title=$title RETURN collect(p)")
 		List<Movie> customPathQueryMoviesFind(@Param("title") String title);
+	}
+
+	@Test
+	void killThemAll(@Autowired MovieRepository repository) {
+		Movie movie = repository.findById("The Matrix").get();
+		assertThat(movie).isNotNull();
+		assertThat(movie.getTitle()).isEqualTo("The Matrix");
+		assertThat(movie.getActors()).hasSize(5);
 	}
 
 	@Test // GH-2117

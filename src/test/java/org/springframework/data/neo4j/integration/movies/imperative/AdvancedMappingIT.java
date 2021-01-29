@@ -59,7 +59,7 @@ class AdvancedMappingIT {
 
 	protected static long theMatrixId;
 
-//	@BeforeAll
+	@BeforeAll
 	static void setupData(@Autowired Driver driver) throws IOException {
 
 		try (BufferedReader moviesReader = new BufferedReader(
@@ -147,7 +147,7 @@ class AdvancedMappingIT {
 		Movie movie = repository.findById("The Matrix").get();
 		assertThat(movie).isNotNull();
 		assertThat(movie.getTitle()).isEqualTo("The Matrix");
-		assertThat(movie.getActors()).hasSize(5);
+		assertThat(movie.getActors()).hasSize(6);
 	}
 
 	@Test

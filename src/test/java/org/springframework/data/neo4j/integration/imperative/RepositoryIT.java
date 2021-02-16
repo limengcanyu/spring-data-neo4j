@@ -1762,16 +1762,19 @@ class RepositoryIT {
 			}
 		}
 
-		@Test
+		@Test // GH-2141
 		void saveWithGeneratedIdsReturnsObjectWithIdSet(
 				@Autowired ImmutablePersonWithGeneratedIdRepository repository) {
 
-			ImmutablePersonWithGeneratedId person = new ImmutablePersonWithGeneratedId();
+			ImmutablePersonWithGeneratedId fallback1 = new ImmutablePersonWithGeneratedId();
+			ImmutablePersonWithGeneratedId fallback2 = new ImmutablePersonWithGeneratedId(fallback1);
+			ImmutablePersonWithGeneratedId person = new ImmutablePersonWithGeneratedId(fallback2);
 
 			ImmutablePersonWithGeneratedId savedPerson = repository.save(person);
 
-			assertThat(person.getId()).isNull();
 			assertThat(savedPerson.getId()).isNotNull();
+			assertThat(savedPerson.getFallback()).isNotNull();
+			assertThat(savedPerson.getFallback().getFallback()).isNotNull();
 		}
 	}
 
